@@ -27,6 +27,10 @@ static TFT_T_DMA tft;
 extern TFT_T_DMA tft;
 #endif
 
+#ifdef HAS_I2CKBD
+#include "hardware/i2c.h"
+#endif
+
 
 #define MAX_FILES           64
 #define MAX_FILENAME_SIZE   24
@@ -738,6 +742,38 @@ int emu_ReadI2CKeyboard(void) {
     retval = handleOskb(); 
   }  
 #endif  
+
+#ifdef HAS_I2CKBD
+  uint8_t key;
+
+  // get nine bytes from i2c device on address 0x08
+  unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
+  retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
+  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
+    return 0;
+  }
+
+  // loop all keys that may be pressed and map them to our matrix
+  // start at pos 7 to skip the RESTORE key byte for now
+  for (int col = 7; col >= 0; col--) {
+    if (msg[col] != 0x00) {
+      for (int row = 7; row >= 0; row--) {
+        if (msg[col] & (1 << row)) {
+          // math out the final position
+          uint8_t pos = (((7 - col) * 8) + (7 - row));
+
+          // if multiple keys are pressed, c64 picks the one with the highest scan code
+          // so let's do the same
+          if (matrix_keys[pos] > key) {
+            key = matrix_keys[pos];
+          }
+        }
+      }
+    }
+  }
+
+  return key;
+#endif
   return(retval);
 }
 
@@ -748,6 +784,41 @@ unsigned char emu_ReadI2CKeyboard2(int row) {
 #endif
   return retval;
 }
+
+#ifdef HAS_I2CKBD
+int emu_ReadI2CKeyboard64() {
+  uint8_t key;
+  int retval;
+
+  // get nine bytes from i2c device on address 0x08
+  unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
+  retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
+  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
+    return 0;
+  }
+
+  // loop all keys that may be pressed and map them to our matrix
+  // start at pos 7 to skip the RESTORE key byte for now
+  for (int col = 7; col >= 0; col--) {
+    if (msg[col] != 0x00) {
+      for (int row = 0; row < 7; row++) {
+        if (msg[col] & (1 << row)) {
+          // math out the final position
+          uint8_t pos = (((8 - col) * 8) + row);
+
+          // if multiple keys are pressed, c64 picks the one with the highest scan code
+          // so let's do the same
+          if (matrix_keys[pos] > key) {
+            key = matrix_keys[pos];
+          }
+        }
+      }
+    }
+  }
+
+  return key;
+}
+#endif
 
 
 void emu_InitJoysticks(void) { 
@@ -949,6 +1020,14 @@ void emu_init(void)
     tft.flipscreen(false);
 #endif
   }
+#endif
+
+#ifdef HAS_C64I2CKBD
+  i2c_init(i2c0, 400000);
+  gpio_set_function(I2C_SDA_IO, GPIO_FUNC_I2C);
+  gpio_set_function(I2C_SCL_IO, GPIO_FUNC_I2C);
+  gpio_pull_up(I2C_SDA_IO);
+  gpio_pull_up(I2C_SCL_IO);
 #endif
 }
 

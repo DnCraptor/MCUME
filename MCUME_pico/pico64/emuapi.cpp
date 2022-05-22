@@ -32,6 +32,9 @@ static TFT_T_DMA tft;
 extern TFT_T_DMA tft;
 #endif
 
+#ifdef HAS_C64I2CKBD
+#include "hardware/i2c.h"
+#endif
 
 #define MAX_FILENAME_PATH   64
 #define NB_FILE_HANDLER     4
@@ -746,7 +749,54 @@ int emu_ReadI2CKeyboard(void) {
   if (!menuOn) {
     retval = handleOskb(); 
   }  
-#endif  
+#endif
+
+#ifdef HAS_C64I2CKBD
+  uint8_t key = 0;
+  uint8_t mod = 0;
+
+  // get nine bytes from i2c device on address 0x08
+  unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
+  retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
+  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
+    return -1;
+  }
+
+  // loop all keys that may be pressed and map them to our matrix
+  // start at pos 7 to skip the RESTORE key byte for now
+  for (int col = 7; col >= 0; col--) {
+    if (msg[col] != 0x00) {
+      for (int row = 7; row >= 0; row--) {
+        if (msg[col] & (1 << row)) {
+          // math out the final position
+          uint8_t pos = (((7 - col) * 8) + (7 - row));
+
+          // get the actual key scan code that was pressed
+          uint8_t pressed = matrix_keys[pos];
+          if (pressed == 0x00) { // special case for INST/DEL
+            pressed = 0xFF;
+          }
+
+          // if this is a "modifier" let's store it for now
+          if ((pressed == 0x0F || pressed == 0x34 || pressed == 0x3A || pressed == 0x3D) && pressed > mod) {
+            mod = pressed;
+            continue;
+          }
+
+          // if multiple keys are pressed, c64 picks the one with the highest scan code
+          // so let's do the same
+          if (pressed > key) {
+            key = pressed;
+          }
+        }
+      }
+    }
+  }
+
+  // return 16 bytes, one for any modifier, one for the highest scancode key being pressed currently
+  return (mod << 8) | key;
+#endif
+
   return(retval);
 }
 
@@ -1286,6 +1336,14 @@ void emu_init(void)
     tft.flipscreen(false);
 #endif
   }
+#endif
+
+#ifdef HAS_C64I2CKBD
+  i2c_init(i2c0, 400000);
+  gpio_set_function(I2C_SDA_IO, GPIO_FUNC_I2C);
+  gpio_set_function(I2C_SCL_IO, GPIO_FUNC_I2C);
+  gpio_pull_up(I2C_SDA_IO);
+  gpio_pull_up(I2C_SCL_IO);
 #endif
 
   if (keypressed & MASK_JOY2_DOWN) {

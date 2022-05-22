@@ -51,6 +51,25 @@ const unsigned short matkeys[] = {
 #endif
 
 
+// lookup table because I can't figure out a way to math this properly!
+const unsigned short matrix_map[] = {
+  0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01
+};
+
+// this is the layout of the actual c64 keyboard matrix
+// hex values here are the actual c64 codes from https://www.c64-wiki.com/wiki/Keyboard_code
+const unsigned short matrix_keys[] = {
+  '1',  0x39, 0x3A, 0x3F, 0x3C, 0x3D, 'q',  '2',
+  '3',  'w',  'a',  0x0F, 'z',  's',  'e',  '4',
+  '5',  'r',  'd',  'x',  'c',  'f',  't',  '6',
+  '7',  'y',  'g',  'v',  'b',  'h',  'u',  '8',
+  '9',  'i',  'j',  'n',  'm',  'k',  'o',  '0',
+  '+',  'p',  'l',  ',',  '.',  ':',  '@',  '-',
+  '£',  '*',  ';',  '/',  0x34, '=',  0x36, 0x33,
+  0x00, 0x01, 0x02, 0x07, 0x04, 0x05, 0x06, 0x07
+};
+
+
 #define MASK_JOY2_RIGHT 0x0001
 #define MASK_JOY2_LEFT  0x0002
 #define MASK_JOY2_UP    0x0004

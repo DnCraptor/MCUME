@@ -3,7 +3,6 @@
 
 #include "platform_config.h"
 
-
 #ifdef MCUME_REV1
 
 // Speaker
@@ -112,6 +111,10 @@
 #define PSRAM_MISO      16 // DC
 #define PSRAM_CS        17
 
+#ifdef HAS_C64I2CKBD
+#define I2C_SDA_IO      8
+#define I2C_SCL_IO      9
+#endif
 
 #ifdef PICOMPUTER
 #if defined(USE_VGA)  
@@ -165,9 +168,9 @@
 //#define PIN_JOY2_A1X    26
 //#define PIN_JOY2_A2Y    27
 
-#define PIN_JOY2_1      27  // UP
-#define PIN_JOY2_2      26  // DOWN
-#define PIN_JOY2_3      28  // RIGHT
+#define PIN_JOY2_1      26  // UP
+#define PIN_JOY2_2      28  // DOWN
+#define PIN_JOY2_3      27  // RIGHT
 #define PIN_JOY2_4      22  // LEFT
 #define PIN_JOY2_BTN    1
 #define PIN_KEY_USER1   20

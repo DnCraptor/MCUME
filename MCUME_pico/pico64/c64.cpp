@@ -1,3 +1,4 @@
+#include "c64.h"
 #include "pico.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -16,6 +17,14 @@ AudioPlaySID playSID;
 #endif
 
 using namespace std;
+
+//#define DEBUG 1
+
+#ifdef DEBUG
+static const char * digits = "0123456789ABCDEF";
+static char buf[5] = {0,0,0,0,0};
+#endif
+
 
 #ifndef PICOMPUTER
 /*
@@ -133,12 +142,29 @@ struct {
 
 
 
-
 static void setKey(uint32_t k, bool pressed) {
+#if DEBUG
+    buf[0] = digits[(k>>12)&0xf];
+    buf[1] = digits[(k>>8)&0xf];
+    buf[2] = digits[(k>>4)&0xf];
+    buf[3] = digits[k&0xf];
+    tft.drawText(8*6+3,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
+
+    buf[0] = digits[(k>>28)&0xf];
+    buf[1] = digits[(k>>24)&0xf];
+    buf[2] = digits[(k>>20)&0xf];
+    buf[3] = digits[(k>>16)&0xf];
+    tft.drawText(8*10+3,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
+#endif
+
   if (pressed) {
+#ifdef HAS_C64I2CKBD
+    kbdData.kv = k;
+#else
     kbdData.kv = (k << 16);
     kbdData.ke = kbdData.k2;
     kbdData.k2 = 0;
+#endif
   }
   else
   {
@@ -187,10 +213,21 @@ uint8_t cia1PORTA(void) {
 
   uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
   
+#ifdef HAS_C64I2CKBD
+  if (kbdData.k | kbdData.k2) {
+    if ( kbdData.k2 & filter)  v &= ~kbdData.k;
+  }
+#else
   if (kbdData.k) {
     if ( keymatrixmap[1][kbdData.k] & filter)  v &= ~keymatrixmap[0][kbdData.k];
   }
+#endif
 
+#ifdef HAS_C64I2CKBD
+  if (kbdData.ke || kbdData.kdummy) {
+    if (kbdData.kdummy & filter ) v &= ~kbdData.ke;
+  }
+#else
   if (kbdData.ke) {
     if (kbdData.ke & 0x02) { //Shift-links
       if ( keymatrixmap[1][0xff] & filter) v &= ~keymatrixmap[0][0xff];
@@ -205,6 +242,7 @@ uint8_t cia1PORTA(void) {
       if ( keymatrixmap[1][0xfc] & filter) v &= ~keymatrixmap[0][0xfc];
     }
   }
+#endif
  
   return v;
 }
@@ -239,10 +277,21 @@ uint8_t cia1PORTB(void) {
 
   uint8_t filter = ~cpu.cia1.R[0x00] & cpu.cia1.R[0x02];
 
+#ifdef HAS_C64I2CKBD
+  if (kbdData.k | kbdData.k2) {
+    if ( kbdData.k & filter) v &= ~kbdData.k2;
+  }
+#else
   if (kbdData.k) {
     if ( keymatrixmap[0][kbdData.k] & filter) v &= ~keymatrixmap[1][kbdData.k];
   }
+#endif
 
+#ifdef HAS_C64I2CKBD
+  if (kbdData.ke || kbdData.kdummy) {
+    if (kbdData.ke & filter ) v &= ~kbdData.kdummy;
+  }
+#else
   if (kbdData.ke) {
     if (kbdData.ke & 0x02) { //Shift-links
       if ( keymatrixmap[0][0xff] & filter) v &= ~keymatrixmap[1][0xff];
@@ -257,6 +306,7 @@ uint8_t cia1PORTB(void) {
       if ( keymatrixmap[0][0xfc] & filter) v &= ~keymatrixmap[1][0xfc];
     }
   }
+#endif
 
   return v;
 }
@@ -333,13 +383,6 @@ void emu_DrawVsync(void)
 #endif    
 }
 */
-#endif
-
-//#define DEBUG 1
-
-#ifdef DEBUG
-static const char * digits = "0123456789ABCDEF";
-static char buf[5] = {0,0,0,0,0};
 #endif
 
 void c64_Input(int bClick) {
@@ -425,22 +468,44 @@ void c64_Input(int bClick) {
     } 
     else  
     {
-      int hk = emu_ReadI2CKeyboard();
-      if ( (hk != 0) && (res == false) ) {
+      uint16_t hk = emu_ReadI2CKeyboard();
 #ifdef DEBUG        
-        buf[3] = 0;
-        buf[0] = digits[(hk>>8)&0xf];
-        buf[1] = digits[(hk>>4)&0xf];
-        buf[2] = digits[hk&0xf];        
+        buf[0] = digits[(hk>>12)&0xf];
+        buf[1] = digits[(hk>>8)&0xf];
+        buf[2] = digits[(hk>>4)&0xf];
+        buf[3] = digits[hk&0xf];        
+        buf[4] = digits[res];
         tft.drawText(0,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
 #endif
+#ifdef HAS_C64I2CKBD
+      if ((hk & 0xFF) != 0 && (res == false)) { // key is currently pressed
+        uint8_t key = hk & 0xFF;
+        if (key == 0xFF) { // revert special case for INST/DEL
+          key = 0x00;
+        }
+        uint8_t mod = (hk >> 8);
+        uint16_t key_mask = matrixMask(key); // inspect just the key being pressed
+        uint16_t mod_mask = matrixMask(mod);
+        setKey(mod_mask << 16 | key_mask, true);
+
+        res = true;
+      }
+      else if ((hk & 0xFF) == 0) // key is no longer pressed
+      {
+        setKey(0, false);
+        res = false;
+      }
+#else
+      if ( (hk != 0) && (res == false) ) {
         setKey(ascii2scan[hk],true);
         res = true;
-      } 
-      else if (hk == 0){
+      }
+      else if (hk == 0)
+      {
         setKey(ascii2scan[hk],false);
         res = false;
       }        
+#endif
     }
   }
   else {

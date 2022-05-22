@@ -55,6 +55,7 @@
 //#define ST7789_POL     1
 #define INVX           1
 #define HAS_SND        1
+#define HAS_C64I2CKBD  1
 #endif
 
 //#define HAS_SND        1

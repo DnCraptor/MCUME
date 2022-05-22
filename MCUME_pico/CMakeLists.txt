@@ -343,6 +343,7 @@ target_link_libraries(mcume pico_multicore
 	    FatFs_SPI
 #	    pico_scanvideo_dpi
 	    hardware_adc
+		hardware_i2c
 	    hardware_pio
         hardware_pwm	    
 	)
