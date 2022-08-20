@@ -17,10 +17,10 @@ pico_sdk_init()
 add_subdirectory(FatFs_SPI build)
 
 include_directories(config)
-include_directories(vga_t4)
+#include_directories(vga_t4)
 #include_directories(picovga_t4)
 include_directories(tft_t)
-include_directories(psram)
+# include_directories(psram)
 
 
 set(PICO81_SOURCES 
@@ -329,13 +329,13 @@ add_executable(mcume
 #		${PICOVALIDATION_SOURCES}
 #		${PSRAM_SOURCES}
 #		${VGA_T4_SOURCES}
-		${PICOVGA_T4_SOURCES}
+		# ${PICOVGA_T4_SOURCES}
 		${TFT_T_SOURCES}
 	)
 
 #pico_generate_pio_header(mcume ${CMAKE_CURRENT_LIST_DIR}/vga_t4/timing.pio)
 #pico_generate_pio_header(mcume ${CMAKE_CURRENT_LIST_DIR}/vga_t4/scanvideo.pio)
-pico_generate_pio_header(mcume ${CMAKE_CURRENT_LIST_DIR}/picovga_t4/picovga.pio)
+# pico_generate_pio_header(mcume ${CMAKE_CURRENT_LIST_DIR}/picovga_t4/picovga.pio)
 
 
 target_link_libraries(mcume pico_multicore

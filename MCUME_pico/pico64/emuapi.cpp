@@ -757,8 +757,9 @@ int emu_ReadI2CKeyboard(void) {
 
   // get nine bytes from i2c device on address 0x08
   unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
-  retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
-  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
+  // retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
+  retval = i2c_read_timeout_us(i2c0, 0x08, msg, 9, false, 5000);
+  if (retval != 9 || retval == PICO_ERROR_GENERIC || retval == PICO_ERROR_TIMEOUT) {
     return -1;
   }
 

@@ -1,3 +1,4 @@
+
 #include "pico.h"
 #include "pico/stdlib.h"
 
@@ -45,6 +46,7 @@ int main(void) {
     set_sys_clock_khz(230000, true);    
 //    set_sys_clock_khz(225000, true);    
 //    set_sys_clock_khz(250000, true);  
+    // set_sys_clock_khz(266000, true);
     stdio_init_all();
 
 #ifdef USE_VGA    

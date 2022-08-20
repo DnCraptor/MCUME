@@ -748,26 +748,23 @@ int emu_ReadI2CKeyboard(void) {
 
   // get nine bytes from i2c device on address 0x08
   unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
-  retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
-  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
-    return 0;
-  }
+  i2c_read_blocking(i2c0, 0x08, msg, 9, false);
 
   // loop all keys that may be pressed and map them to our matrix
   // start at pos 7 to skip the RESTORE key byte for now
-  for (int col = 7; col >= 0; col--) {
-    if (msg[col] != 0x00) {
-      for (int row = 7; row >= 0; row--) {
-        if (msg[col] & (1 << row)) {
-          // math out the final position
-          uint8_t pos = (((7 - col) * 8) + (7 - row));
+  for (int i = 7; i >= 0; i--) {
+    if (msg[i] != 0x00) {
+      // find our position in the key matrix map
+      size_t index = 0;
+      while (index < sizeof(matrix_map)/sizeof(matrix_map[0]) && matrix_map[index] != msg[i]) ++index;
 
-          // if multiple keys are pressed, c64 picks the one with the highest scan code
-          // so let's do the same
-          if (matrix_keys[pos] > key) {
-            key = matrix_keys[pos];
-          }
-        }
+      // math out the final position
+      uint8_t pos = (((7 - i) * 8) + index);
+
+      // if multiple keys are pressed, c64 picks the one with the highest scan code
+      // so let's do the same
+      if (matrix_keys[pos] > key) {
+        key = matrix_keys[pos];
       }
     }
   }
@@ -793,9 +790,7 @@ int emu_ReadI2CKeyboard64() {
   // get nine bytes from i2c device on address 0x08
   unsigned char msg[9] = {0,0,0,0,0,0,0,0,0};
   retval = i2c_read_blocking(i2c0, 0x08, msg, 9, false);
-  if (retval != 9 || retval == PICO_ERROR_GENERIC) {
-    return 0;
-  }
+  if (retval != 9 || RET)
 
   // loop all keys that may be pressed and map them to our matrix
   // start at pos 7 to skip the RESTORE key byte for now
@@ -804,7 +799,7 @@ int emu_ReadI2CKeyboard64() {
       for (int row = 0; row < 7; row++) {
         if (msg[col] & (1 << row)) {
           // math out the final position
-          uint8_t pos = (((8 - col) * 8) + row);
+          uint8_t pos = (((7 - col) * 8) + row);
 
           // if multiple keys are pressed, c64 picks the one with the highest scan code
           // so let's do the same
@@ -1022,7 +1017,7 @@ void emu_init(void)
   }
 #endif
 
-#ifdef HAS_C64I2CKBD
+#ifdef HAS_I2CKBD
   i2c_init(i2c0, 400000);
   gpio_set_function(I2C_SDA_IO, GPIO_FUNC_I2C);
   gpio_set_function(I2C_SCL_IO, GPIO_FUNC_I2C);

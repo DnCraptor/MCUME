@@ -473,7 +473,7 @@ void c64_Input(int bClick) {
         buf[0] = digits[(hk>>12)&0xf];
         buf[1] = digits[(hk>>8)&0xf];
         buf[2] = digits[(hk>>4)&0xf];
-        buf[3] = digits[hk&0xf];        
+        buf[3] = digits[hk&0xf];
         buf[4] = digits[res];
         tft.drawText(0,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
 #endif
