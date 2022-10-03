@@ -1045,11 +1045,20 @@ int handleMenu(uint16_t bClick)
   int action = ACTION_NONE;
 #ifdef HAS_C64I2CKBD
   uint16_t hk = emu_ReadI2CKeyboard();
+  uint8_t key = (hk & 0xff);
   uint8_t mod = (hk >> 8);
 
-  if ( ((bClick & MASK_JOY1_BTN) || (bClick & MASK_JOY2_BTN)) && (mod & 0x3D) ) {
-    emu_SwapJoysticks(0);
-    menuRedraw=true;  
+  if (!bClick && key & 0x03) {
+    if (joySwapped == 1) {
+      joySwapped = 0;
+      menuRedraw=true;
+    }
+  } else
+  if (!bClick && key & 0x05) {
+    if (joySwapped == 0) {
+      joySwapped = 1;
+      menuRedraw=true;
+    }
   } else
 #endif
   if ( (bClick & MASK_JOY1_BTN) || (bClick & MASK_JOY2_BTN)  ) {     
@@ -1150,7 +1159,7 @@ int handleMenu(uint16_t bClick)
     }
 
      
-    tft.drawTextNoDma(48,MENU_JOYS_YOFFSET+8, (emu_SwapJoysticks(1)?(char*)"SWAP=1":(char*)"SWAP=0"), RGBVAL16(0x00,0xff,0xff), RGBVAL16(0x00,0x00,0xff), false);
+    tft.drawTextNoDma(48,MENU_JOYS_YOFFSET+8, (emu_SwapJoysticks(1)?(char*)"JOYSTICK PORT 1":(char*)"JOYSTICK PORT 2"), RGBVAL16(0x00,0xff,0xff), RGBVAL16(0x00,0x00,0xff), false);
     menuRedraw=false;     
   }
 
