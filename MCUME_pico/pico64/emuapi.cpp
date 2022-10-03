@@ -1032,8 +1032,16 @@ int handleMenu(uint16_t bClick)
   }  
 
   int action = ACTION_NONE;
+#ifdef HAS_C64I2CKBD
+  uint16_t hk = emu_ReadI2CKeyboard();
+  uint8_t mod = (hk >> 8);
 
-  if ( (bClick & MASK_JOY2_BTN) ) {     
+  if ( ((bClick & MASK_JOY1_BTN) || (bClick & MASK_JOY2_BTN)) && (mod & 0x3D) ) {
+    emu_SwapJoysticks(0);
+    menuRedraw=true;  
+  } else
+#endif
+  if ( (bClick & MASK_JOY1_BTN) || (bClick & MASK_JOY2_BTN)  ) {     
     char newpath[MAX_FILENAME_PATH];
     strcpy(newpath, selection);
     strcat(newpath, "/");
