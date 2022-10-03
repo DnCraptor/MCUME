@@ -1005,9 +1005,20 @@ static int readNbFiles(char * rootdir) {
   } 
   f_closedir(&dir);
 
+  // sort files array alphabetically
+  char temp[MAX_FILENAME_SIZE];
+  for (int i = 0; i < totalFiles; i++) {
+    for (int j = 0; j < totalFiles - 1 - i; j++) {
+      if (strcmp(files[j], files[j + 1]) > 0) {
+        strcpy(temp, files[j]);
+        strcpy(files[j], files[j + 1]);
+        strcpy(files[j+1], temp);
+      }
+    }
+  }
+
   return totalFiles;  
 }  
-
 
 
 void backgroundMenu(void) {
