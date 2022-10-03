@@ -1169,13 +1169,13 @@ char * menuSelection(void)
 /********************************
  * File IO
 ********************************/ 
-int emu_FileOpen(const char * filepath, const char * mode)
+int emu_FileOpen(const char * filepath, int mode)
 {
   int retval = 0;
 
   emu_printf("FileOpen...");
   emu_printf(filepath);
-  if( !(f_open(&file, filepath, FA_READ)) ) {
+  if( !(f_open(&file, filepath, mode)) ) {
     retval = 1;  
   }
   else {
@@ -1189,6 +1189,13 @@ int emu_FileRead(void * buf, int size, int handler)
   unsigned int retval=0; 
   f_read (&file, (void*)buf, size, &retval);
   return retval; 
+}
+
+int emu_FileWrite(void * buf, int size, int handler)
+{
+  unsigned int retval=0; 
+  f_write(&file, (void*)buf, size, &retval);
+  return retval;
 }
 
 int emu_FileGetc(int handler)

@@ -36,6 +36,7 @@
 #include "patches.h"
 #include "emuapi.h"
 #include "platform_config.h"
+#include "ff.h"
 
 
 #define DIRECTORY ROMSDIR + "/\0"
@@ -186,18 +187,21 @@ uint16_t addr,size;
 	strcpy(filename,menuSelection());
   }
   else {
-	strncpy(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );
+	strcpy(filename, ROMSDIR);
+	strncat(filename, "/\0", 2);
+	strncat(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );
   }     
 	secondaryAddress = cpu.RAM[0xB9];
 
   //Serial.println("loading");
 	//printf("%s,%d,%d:", filename, device, secondaryAddress);
+	int f;
 #ifdef EXTERNAL_SD  
   tft.stopDMA();
   //emu_resetSD();
   tft.fillScreenNoDma( RGBVAL16(0x00,0x00,0x00) );
 #endif  
-	if (emu_FileOpen(filename, "r+b") == 0) {
+	if (f = emu_FileOpen(filename, FA_READ) == 0) {
 		//Serial.println("not found");
 		cpu.pc = 0xf530; //Jump to $F530
 #ifdef EXTERNAL_SD  
@@ -207,7 +211,6 @@ uint16_t addr,size;
 	}
 
 	size = emu_FileSize(filename);
-	int f = emu_FileOpen(filename, "r+b");
 	emu_FileRead(buffer, 2, f);
 	addr = buffer[1] * 256 + buffer[0];
 	emu_FileRead((char*)&cpu.RAM[addr], size - 2, f);
@@ -226,7 +229,6 @@ uint16_t addr,size;
 }
 
 void patchSAVE(void) {
-#ifdef XXX
 int device;
 int secondaryAddress;
 uint16_t addr,size;
@@ -238,6 +240,45 @@ uint16_t addr,size;
 		cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];
 		return;
 	};
+
+	//$B7    : Length of file name or disk command
+	//$BB-$BC: Pointer to current file name or disk command
+	memset(filename,0,sizeof(filename));
+	strcpy(filename, ROMSDIR);
+	strncat(filename, "/\0", 2);
+	strncat(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );
+
+	secondaryAddress = cpu.RAM[0xB9];
+
+	addr = cpu.RAM[cpu.a + 1] * 256 + cpu.RAM[cpu.a];
+	size = (cpu.y * 256 + cpu.x) - addr;
+
+	buffer[0] = addr & 0xff;
+	buffer[1] = addr >> 8;
+
+	int f = emu_FileOpen(filename, FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+	if (!f) {
+		//Serial.println ("not possible.");
+		cpu.pc = 0xf530; //Jump to $F530
+		return;
+	}
+	emu_FileWrite(buffer, 2, f);
+	emu_FileWrite(&cpu.RAM[addr], size, 0);
+	emu_FileClose(f);
+
+	if (cpu.RAM[0x9D] & 128) {
+		uint16_t pushval = 0xF68D;
+		cpu.RAM[BASE_STACK + cpu.sp] = (pushval >> 8) & 0xFF;
+		cpu.RAM[BASE_STACK + ((cpu.sp - 1) & 0xFF)] = pushval & 0xFF;
+		cpu.sp -= 2;
+
+		cpu.y = 0x51;
+		cpu.pc = 0xF12F;
+	} else {
+		cpu.pc = 0xF68D;
+	}
+
+#ifdef XXX
 
 	if (!SDinitialized) {
 		cpu.pc = 0xF707; //Device not present error
