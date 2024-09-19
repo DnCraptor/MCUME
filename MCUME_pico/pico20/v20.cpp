@@ -201,13 +201,12 @@ const uint32_t ascii2scan[] = {
 
 static int ik;
 static int ihk;
-
 static int pik=0;
 
 
 void v20_Input(int bClick) {
-  ik  = emu_GetPad();
   ihk = emu_ReadI2CKeyboard();
+  ik  = emu_GetPad(); 
 }
 
 void emu_KeyboardOnDown(int keymodifer, int key) {
@@ -358,9 +357,9 @@ void v20_Step(void)
 
   int hk=ihk;
 
-#ifdef PICOMPUTER
+#if (defined(PICOMPUTER) || defined(PICOZX) )
   if (hk) {
-    int scan = ascii2scan[ihk];
+    int scan = ascii2scan[hk];
     if (scan & 0x10000) mos6522.setShiftPressed(true);
     else mos6522.setShiftPressed(false);  
     mos6522.setKeyPressed(scan & 0xffff);
@@ -373,9 +372,10 @@ void v20_Step(void)
 
 
   int k=ik; 
-#ifdef PICOMPUTER
+#if (defined(PICOMPUTER) || defined(PICOZX) )
   // Ignore joypad if shift is pressed!!!
-  if ( !(k & MASK_KEY_USER2) )
+//  if ( !(k & MASK_KEY_USER2) )
+  if ( hk == 0 )
 #endif
   {
     if ( !(pik & MASK_JOY2_BTN) && (k & MASK_JOY2_BTN) ) {
@@ -410,7 +410,8 @@ void v20_Step(void)
     } 
   }  
 
-#ifndef PICOMPUTER
+#if (defined(PICOMPUTER) || defined(PICOZX) )
+#else
   if ( !(pik & MASK_KEY_USER1) && (k & MASK_KEY_USER1) ) {
     mos6522.setKeyPressed(0xEF7F);
     mos6522.setShiftPressed(true);  

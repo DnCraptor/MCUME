@@ -3,12 +3,34 @@
 
 #include "platform_config.h"
 
+#define AUDIO_PIN       26
+#define VGA_COLORBASE   6
+#define VGA_SYNCBASE    12
+#define VGA_VSYNC       13
 
+#define SD_SPIREG       spi0
+#define SD_SCLK         2
+#define SD_MOSI         3
+#define SD_MISO         4
+#define SD_CS           5
+#define SD_DETECT       255 // 22
+
+
+// TFT
+#define TFT_SPIREG      spi1
+#define TFT_SPIDREQ     DREQ_SPI1_TX
+#define TFT_SCLK        14
+#define TFT_MOSI        15
+#define TFT_MISO        12
+#define TFT_DC          28
+#define TFT_CS          13  // 255 for LORES ST7789 (NO CS)
+#define TFT_RST         255 // 255 for ILI/ST if connected to 3.3V
+#define TFT_BACKLIGHT   255 // hardwired to 3.3v
+#if 0
 #ifdef MCUME_REV1
 
 // Speaker
 #define AUDIO_PIN       28
-
 // VGA
 /*
 2-9 RRRGGGBB
@@ -48,10 +70,10 @@
 #define I2C_SCL_IO      15? 
 #define I2C_SDA_IO      14?
 */
+#else /* end MCUME_REV1 */
 
-#else
+#if (defined(PICOMPUTER) && defined(USE_VGA) )
 
-#if (defined(PICOMPUTER) && defined(USE_VGA) )   
 // Speaker
 #define AUDIO_PIN       9
 // VGA
@@ -59,7 +81,19 @@
    CSYNC */
 #define VGA_COLORBASE   0
 #define VGA_SYNCBASE    8
-#else
+#else /* end PICOMPUTER && USE_VGA () */
+
+#ifdef PICOZX
+
+// Speaker
+#define AUDIO_PIN       7
+// VGA
+/* RRGGBB
+   CSYNC */
+#define VGA_COLORBASE   0
+#define VGA_SYNCBASE    6
+
+#else /* PICOZX */
 // Speaker
 #define AUDIO_PIN       0
 // VGA
@@ -68,10 +102,23 @@
 #define VGA_COLORBASE   2
 #define VGA_SYNCBASE    14
 #define VGA_VSYNC       15
+#endif
 
 #endif
 
+#ifdef PICOZX
 
+#define TFT_SPIREG      spi0
+#define TFT_SPIDREQ     DREQ_SPI0_TX
+#define TFT_SCLK        2
+#define TFT_MOSI        3
+#define TFT_MISO        255 // Not required, used for DC... 
+#define TFT_DC          6
+#define TFT_RST         255
+#define TFT_CS          5
+#define TFT_BACKLIGHT   4
+
+#else
 // TFT
 #define TFT_SPIREG      spi0
 #define TFT_SPIDREQ     DREQ_SPI0_TX
@@ -79,23 +126,26 @@
 #define TFT_MOSI        19
 #define TFT_MISO        255 // Not required, used for DC... 
 #define TFT_DC          16
+
 #ifdef PICOMPUTER
 #ifdef PICOMPUTERMAX
 #define TFT_RST         255
 #define TFT_CS          21
 #define TFT_BACKLIGHT   20
-#else
+
+#else /* end PICOMPUTERMAX */
 #define TFT_RST         21
 #define TFT_CS          255
 #define TFT_BACKLIGHT   20
 #endif
-#else
+
+#else /* end PICOMPUTER */
 // MCUME_REV2 (ILI)
 #define TFT_RST         21
 #define TFT_CS          17
 #define TFT_BACKLIGHT   255 // hardwired to 3.3v
 #endif
-
+#endif
 
 // SD (see SPI0 in code!!!)
 #define SD_SPIREG       spi1
@@ -103,7 +153,7 @@
 #define SD_MOSI         11 //15
 #define SD_MISO         12 
 #define SD_CS           13
-#define SD_DETECT       255 // 22
+#define SD_DETECT       255 //22
 
 // PSRAM (exclusive with TFT)
 #define PSRAM_SPIREG    spi0
@@ -114,7 +164,9 @@
 
 
 #ifdef PICOMPUTER
-#if defined(USE_VGA)  
+
+#if defined(USE_VGA)
+
 // Keyboard matrix 
 //Cols (out)
 #define KCOLOUT1        20
@@ -130,7 +182,8 @@
 #define KROWIN4         17
 #define KROWIN5         18
 #define KROWIN6         19
-#else
+#else /* end USE_VGA (RETROVGA)*/
+
 // Keyboard matrix 
 //Cols (out)
 #define KCOLOUT1        1
@@ -146,11 +199,12 @@
 #define KROWIN4         8
 #define KROWIN5         7
 #define KROWIN6         22
+
 #endif
 
 #define KLED            25
-
 #else
+
 #ifdef MCUME_REV1
 
 // Analog joystick (primary) for JOY2 and 2 extra buttons
@@ -159,8 +213,30 @@
 #define PIN_JOY2_BTN    22
 #define PIN_KEY_USER1   20
 #define PIN_KEY_USER2   21 
+
 #else
 
+#ifdef PICOZX
+// Keyboard matrix 
+//Cols (out)
+#define KCOLOUT1        8
+#define KCOLOUT2        9
+#define KCOLOUT3        14
+#define KCOLOUT4        15
+#define KCOLOUT5        16
+#define KCOLOUT6        17
+#define KCOLOUT7        18
+//Rows (in)
+#define KROWIN1         19
+#define KROWIN2         20
+#define KROWIN3         21
+#define KROWIN4         22
+#define KROWIN5         26
+#define KROWIN6         27
+#define KROWIN7         28
+
+
+#else
 // Digital joystick (primary) for JOY2 and 2 extra buttons
 //#define PIN_JOY2_A1X    26
 //#define PIN_JOY2_A2Y    27
@@ -175,7 +251,7 @@
 
 #endif
 #endif
-
+#endif
 #endif
 
 // Second joystick (Not available on PICO)
@@ -185,4 +261,5 @@
 //#define PIN_JOY1_3       6  // RIGHT
 //#define PIN_JOY1_4       5  // LEFT
 
+#endif
 #endif

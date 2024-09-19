@@ -914,6 +914,7 @@ void emu_InitJoysticks(void) {
 }
 
 int emu_setKeymap(int index) {
+  return 0;
 }
 
 
@@ -1233,7 +1234,7 @@ static bool emu_readConfig(void)
 
 static bool emu_eraseConfig(void)
 {
-  f_unlink (ROMSDIR "/" AUTORUN_FILENAME);
+  return FR_OK == f_unlink (ROMSDIR "/" AUTORUN_FILENAME);
 }
 
 

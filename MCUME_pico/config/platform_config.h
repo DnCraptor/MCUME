@@ -6,11 +6,21 @@
 // PICOMPUTER has support for TFT+keymatrix+Sound 
 
 
+//#define PICOZX         1
 //#define PICOMPUTER     1
 //#define PICOMPUTERMAX  1
 //#define PICORETROVGA   1
-//#define MCUME_REV1      1
-#define MCUME_REV2      1
+#define MCUME_REV1      1
+//#define MCUME_REV2      1
+
+#ifdef PICOZX
+//#define USE_VGA        1
+#define VGA222         1
+#define ST7789         1
+#define ST7789_POL     1
+#define HAS_SND        1
+#define INVX           1
+#endif
 
 #ifdef PICOMPUTER
 //#define SWAP_ALT_DEL   1
@@ -43,8 +53,20 @@
 
 #ifdef MCUME_REV1
 #define USE_VGA        1
-#define INVX           1
+#define VGA222         1
+#undef INVX
 #define HAS_SND        1
+
+#undef LOHRES
+#undef FLIP_SCREEN
+#undef ST7789
+#undef ILI9341
+
+//NES Gamepad
+#define NES_GPIO_CLK 14
+#define NES_GPIO_DATA 16
+#define NES_GPIO_LAT 15
+
 #endif
 
 #ifdef MCUME_REV2

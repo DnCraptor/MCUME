@@ -41,7 +41,7 @@
 #endif
 
 #ifndef PS2KEYBOARD
-#define PS2KEYBOARD 	0	//Use 0 for USB-HOST
+#define PS2KEYBOARD 	1	//Use 0 for USB-HOST
 #endif
 
 

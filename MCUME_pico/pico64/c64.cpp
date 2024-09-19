@@ -132,9 +132,7 @@ struct {
 } kbdData = {0, 0, 0};
 
 
-
-
-static void setKey(uint32_t k, bool pressed) {
+void setKey(uint32_t k, bool pressed) {
   if (pressed) {
     kbdData.kv = (k << 16);
     kbdData.ke = kbdData.k2;
@@ -146,7 +144,7 @@ static void setKey(uint32_t k, bool pressed) {
   }
 }
 
-static void pushStringToTextEntry(char * text) {
+void pushStringToTextEntry(char * text) {
     char c;
     while ((c = *text++)) {
         setKey(ascii2scan[c], true); 
@@ -292,11 +290,12 @@ static uint8_t kcnt = 0;
 static bool toggle = true;
 
 static char * textseq;
-static char * textload = "LOAD\"\"\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tRUN\r";
+static char textload[] = "LOAD\"\"\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tRUN\r";
 static char textkey[1];
 
 static bool res=false;
 static bool firsttime=true;
+static int  loadtimeout=100; //100*20ms;
 
 #ifndef PICOMPUTER
 /*
@@ -411,17 +410,22 @@ void c64_Input(int bClick) {
     } 
     else
 */    
-#endif 
+#endif
+    if (loadtimeout > 0) {
+      loadtimeout--; 
+    }
     if ( (bClick & MASK_KEY_USER1) && !(emu_GetPad() & MASK_OSKB) ) {
-      if (firsttime) {
-        firsttime = false;
-        textseq = textload;
-        nbkeys = strlen(textseq);   
-        kcnt=0;
+      if (loadtimeout == 0) {
+        if (firsttime) {
+          firsttime = false;
+          textseq = textload;
+          nbkeys = strlen(textseq);   
+          kcnt=0;
+        }
+        else {
+          cpu.swapJoysticks = !cpu.swapJoysticks;
+        }        
       }
-      else {
-        cpu.swapJoysticks = !cpu.swapJoysticks;
-      }        
     } 
     else  
     {
