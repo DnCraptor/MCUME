@@ -292,16 +292,16 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     do {
 
 	  if (cpu.vic.idle) {
-		cpu_clock(1);
-		fgcol = colors[1] = colors[2] = colors[3] = 0;
-		chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+		  cpu_clock(1);
+		  fgcol = colors[1] = colors[2] = colors[3] = 0;
+		  chr = cpu.RAM[cpu.vic.bank + 0x3fff];
 	  } else {
         BADLINE(x);
         fgcol = cpu.vic.lineMemCol[x];
-	    colors[1] = cpu.vic.R[0x22];
+	      colors[1] = cpu.vic.R[0x22];
         colors[2] = cpu.vic.R[0x23];
         colors[3] = fgcol & 0x07;
-		chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+		    chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
 	  }
 
       x++;
@@ -356,7 +356,7 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
           if (sprite) {    // Sprite: Ja
             int spritenum = SPRITENUM(sprite);
-			pixel = sprite & 0x0f; //Hintergrundgrafik
+			      pixel = sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
 
               if (chr & 0x80) {  //Vordergrundpixel ist gesetzt
@@ -380,7 +380,7 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
           //Das gleiche nochmal für das nächste Pixel
           if (sprite) {    // Sprite: Ja
             int spritenum = SPRITENUM(sprite);
-			pixel =  sprite & 0x0f; //Hintergrundgrafik
+			      pixel =  sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
 
               if (chr & 0x80) { //Vordergrundpixel ist gesetzt

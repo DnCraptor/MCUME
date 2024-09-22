@@ -8,7 +8,7 @@
 #define CUSTOM_SND           1
 //#define TIMER_REND           1
 #define EXTRA_HEAP           0x10
-#define FILEBROWSER
+///#define FILEBROWSER
 
 // Title:     <                        >
 #define TITLE "    C64 Emulator "

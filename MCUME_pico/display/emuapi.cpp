@@ -818,7 +818,7 @@ static kbd_state_t ks = { 0 };
 #define CHAR_CODE_BS    8
 #define CHAR_CODE_UP    17
 #define CHAR_CODE_DOWN  18
-#define CHAR_CODE_ENTER '\n'
+#define CHAR_CODE_ENTER 0x0D //'\n'
 #define CHAR_CODE_TAB   '\t'
 #define CHAR_CODE_ESC   0x1B
 

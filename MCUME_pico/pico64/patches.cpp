@@ -37,11 +37,13 @@
 #include "emuapi.h"
 #include "platform_config.h"
 
+#ifdef FILEBROWSER
 
 #define DIRECTORY ROMSDIR + "/\0"
 
 static char filename[64];
 static char buffer[2];
+
 
 extern char * menuSelection(void);
 
@@ -298,3 +300,5 @@ uint16_t addr,size;
 	return;
 #endif	
 }
+
+#endif	
