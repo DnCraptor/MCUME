@@ -844,6 +844,14 @@ int emu_ReadI2CKeyboard(void) {
     size_t s;
     char c = 0;
     ks.input = ps2scancode;
+    if (ps2scancode == 0xE04B || ps2scancode == 0x4B && !(get_leds_stat() & PS2_LED_NUM_LOCK)) {
+        ks.input = 0;
+        return CHAR_CODE_LEFT;
+    }
+    if (ps2scancode == 0xE04D || ps2scancode == 0x4D && !(get_leds_stat() & PS2_LED_NUM_LOCK)) {
+        ks.input = 0;
+        return CHAR_CODE_RIGHT;
+    }
     if (ps2scancode == 0xE048 || ps2scancode == 0x48 && !(get_leds_stat() & PS2_LED_NUM_LOCK)) {
         ks.input = 0;
         return CHAR_CODE_UP;
