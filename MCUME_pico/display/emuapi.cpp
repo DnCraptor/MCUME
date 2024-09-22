@@ -819,12 +819,21 @@ static kbd_state_t ks = {
 
 #define CHAR_CODE_BS    8
 #define CHAR_CODE_UP    145
+#define CHAR_CODE_TAB   '\t'
+#define CHAR_CODE_ESC   0x1B
+
 #define CHAR_CODE_DOWN  17
 #define CHAR_CODE_RIGHT 29
 #define CHAR_CODE_LEFT  157
 #define CHAR_CODE_ENTER 0x0D //'\n'
-#define CHAR_CODE_TAB   '\t'
-#define CHAR_CODE_ESC   0x1B
+#define CHAR_CODE_F1 0x85
+#define CHAR_CODE_F2 0x86
+#define CHAR_CODE_F3 0x87
+#define CHAR_CODE_F4 0x88
+#define CHAR_CODE_F5 0x89
+#define CHAR_CODE_F6 0x8A
+#define CHAR_CODE_F7 0x8B
+#define CHAR_CODE_F8 0x8C
 
 static char tricode2c(char tricode[4], size_t s) {
     unsigned int r = 0;
@@ -863,6 +872,10 @@ int emu_ReadI2CKeyboard(void) {
     if (ps2scancode == 0xE09C) {
         ks.input = 0;
         return CHAR_CODE_ENTER;
+    }
+    if (ps2scancode >= 0x3B && ps2scancode <= 0x42) { // F1..F8
+        ks.input = 0;
+        return ps2scancode - 0x3B + CHAR_CODE_F1;
     }
     switch ((uint8_t)ks.input & 0xFF) {
         case 0x81: // ESC
