@@ -800,6 +800,7 @@ extern "C" uint8_t get_leds_stat();
 extern "C" volatile uint32_t ps2scancode;
 
 typedef struct kbd_state {
+    bool bWinPressed; // left Win
     bool bCtrlPressed;
     bool bAltPressed;
     bool bDelPressed;
@@ -816,6 +817,10 @@ typedef struct kbd_state {
 static kbd_state_t ks = {
     0
 };
+
+kbd_state_t* get_kbd_state(void) {
+    return &ks;
+}
 
 #define CHAR_CODE_BS    8
 #define CHAR_CODE_UP    145
@@ -903,6 +908,15 @@ int emu_ReadI2CKeyboard(void) {
         case 0xD3:
             ks.bDelPressed = false;
             break;
+
+        case 0x5B:
+            ks.bWinPressed = true;
+            break;
+        case 0xDB:
+            ks.bWinPressed = false;
+            break;
+
+
         case 0x2A:
             ks.bLeftShift = true;
             if (ks.bCtrlPressed) ks.bRus = !ks.bRus;

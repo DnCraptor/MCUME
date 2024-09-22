@@ -341,6 +341,24 @@ static const char * digits = "0123456789ABCDEF";
 static char buf[5] = {0,0,0,0,0};
 #endif
 
+// TODO: header
+typedef struct kbd_state {
+    bool bWinPressed; // left Win
+    bool bCtrlPressed;
+    bool bAltPressed;
+    bool bDelPressed;
+    bool bLeftShift;
+    bool bRightShift;
+    bool bRus;
+    bool bCapsLock;
+    bool bTabPressed;
+    bool bPlusPressed;
+    bool bMinusPressed;
+    uint32_t input;
+} kbd_state_t;
+
+kbd_state_t* get_kbd_state(void);
+
 void c64_Input(int bClick) {
 #ifdef DEBUG
         /*
@@ -429,6 +447,7 @@ void c64_Input(int bClick) {
     } 
     else  
     {
+      kbd_state_t* pks = get_kbd_state();
       int hk = emu_ReadI2CKeyboard();
       if ( (hk != 0) && (res == false) ) {
 #ifdef DEBUG        
@@ -438,7 +457,20 @@ void c64_Input(int bClick) {
         buf[2] = digits[hk&0xf];        
         tft.drawText(0,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
 #endif
-        setKey(ascii2scan[hk],true);
+        uint32_t v = ascii2scan[hk];
+        if ( pks->bLeftShift ) {
+          v |= 0x0200;
+        }
+        if ( pks->bRightShift ) {
+          v |= 0x2000;
+        }
+        if ( pks->bCtrlPressed ) {
+          v |= 0x1100;
+        }
+        if ( pks->bWinPressed ) {
+          v |= 0x8800;
+        }
+        setKey(v, true);
         res = true;
       } 
       else if (hk == 0){
