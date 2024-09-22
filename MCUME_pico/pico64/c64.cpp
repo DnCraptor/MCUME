@@ -131,6 +131,9 @@ struct {
   uint8_t shiftLock;
 } kbdData = {0, 0, 0};
 
+// TODO: include
+void emu_drawText(unsigned short x, unsigned short y, const char *text, unsigned short fgcolor, unsigned short bgcolor,
+                  int doublesize);
 
 void setKey(uint32_t k, bool pressed) {
   if (pressed) {
@@ -181,37 +184,36 @@ uint8_t cia1PORTA(void) {
   }	
 
 
-  if (!kbdData.kv) return v; //Keine Taste gedrückt
-
-  uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
+  if (kbdData.kv) { //Keine Taste gedrückt
+    uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
   
-  if (kbdData.k) {
-    if ( keymatrixmap[1][kbdData.k] & filter)  v &= ~keymatrixmap[0][kbdData.k];
-  }
+    if (kbdData.k) {
+      if ( keymatrixmap[1][kbdData.k] & filter)  v &= ~keymatrixmap[0][kbdData.k];
+    }
 
-  if (kbdData.ke) {
-    if (kbdData.ke & 0x02) { //Shift-links
-      if ( keymatrixmap[1][0xff] & filter) v &= ~keymatrixmap[0][0xff];
-    }
-    if (kbdData.ke & 0x20) { //Shift-rechts
-      if ( keymatrixmap[1][0xfe] & filter) v &= ~keymatrixmap[0][0xfe];
-    }
-    if (kbdData.ke & 0x11) { //Control
-      if ( keymatrixmap[1][0xfd] & filter) v &= ~keymatrixmap[0][0xfd];
-    }
-    if (kbdData.ke & 0x88) { //Windows (=> Commodore)
-      if ( keymatrixmap[1][0xfc] & filter) v &= ~keymatrixmap[0][0xfc];
+    if (kbdData.ke) {
+      if (kbdData.ke & 0x02) { //Shift-links
+        if ( keymatrixmap[1][0xff] & filter) v &= ~keymatrixmap[0][0xff];
+      }
+      if (kbdData.ke & 0x20) { //Shift-rechts
+        if ( keymatrixmap[1][0xfe] & filter) v &= ~keymatrixmap[0][0xfe];
+      }
+      if (kbdData.ke & 0x11) { //Control
+        if ( keymatrixmap[1][0xfd] & filter) v &= ~keymatrixmap[0][0xfd];
+      }
+      if (kbdData.ke & 0x88) { //Windows (=> Commodore)
+        if ( keymatrixmap[1][0xfc] & filter) v &= ~keymatrixmap[0][0xfc];
+      }
     }
   }
- 
+  char tmp[64];
+  snprintf(tmp, 64, "A: v: %xh kv: %xh k: %xh keys: %xh", v, kbdData.kv, kbdData.k, keys);
+  emu_drawText(0, 0, tmp, 60, 0, 0);
   return v;
 }
 
-
 uint8_t cia1PORTB(void) {
-
   uint8_t v;
-
   v = ~cpu.cia1.R[0x03] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]) ;
   int keys = emu_GetPad();
 #ifndef PICOMPUTER
@@ -233,29 +235,30 @@ uint8_t cia1PORTB(void) {
     if (keys & MASK_JOY2_LEFT) v &= 0xF7;
   }
 
-  if (!kbdData.kv) return v; //Keine Taste gedrückt
-
-  uint8_t filter = ~cpu.cia1.R[0x00] & cpu.cia1.R[0x02];
-
-  if (kbdData.k) {
-    if ( keymatrixmap[0][kbdData.k] & filter) v &= ~keymatrixmap[1][kbdData.k];
-  }
-
-  if (kbdData.ke) {
-    if (kbdData.ke & 0x02) { //Shift-links
-      if ( keymatrixmap[0][0xff] & filter) v &= ~keymatrixmap[1][0xff];
+  if (kbdData.kv) { //Keine Taste gedrückt
+    uint8_t filter = ~cpu.cia1.R[0x00] & cpu.cia1.R[0x02];
+    if (kbdData.k) {
+      if ( keymatrixmap[0][kbdData.k] & filter) v &= ~keymatrixmap[1][kbdData.k];
     }
-    if (kbdData.ke & 0x20) { //Shift-rechts
-      if ( keymatrixmap[0][0xfe] & filter) v &= ~keymatrixmap[1][0xfe];
-    }
-    if (kbdData.ke & 0x11) { //Control
-      if ( keymatrixmap[0][0xfd] & filter) v &= ~keymatrixmap[1][0xfd];
-    }
-    if (kbdData.ke & 0x88) { //Windows (=> Commodore)
-      if ( keymatrixmap[0][0xfc] & filter) v &= ~keymatrixmap[1][0xfc];
+    if (kbdData.ke) {
+      if (kbdData.ke & 0x02) { //Shift-links
+        if ( keymatrixmap[0][0xff] & filter) v &= ~keymatrixmap[1][0xff];
+      }
+      if (kbdData.ke & 0x20) { //Shift-rechts
+        if ( keymatrixmap[0][0xfe] & filter) v &= ~keymatrixmap[1][0xfe];
+      }
+      if (kbdData.ke & 0x11) { //Control
+        if ( keymatrixmap[0][0xfd] & filter) v &= ~keymatrixmap[1][0xfd];
+      }
+      if (kbdData.ke & 0x88) { //Windows (=> Commodore)
+        if ( keymatrixmap[0][0xfc] & filter) v &= ~keymatrixmap[1][0xfc];
+      }
     }
   }
-
+  char tmp[64];
+  snprintf(tmp, 64, "B: v: %xh kv: %xh k: %xh keys: %xh", v, kbdData.kv, kbdData.k, keys);
+  emu_drawText(0, 1, tmp, 50, 0, 0);
+  return v;
   return v;
 }
 
@@ -470,6 +473,7 @@ void c64_Input(int bClick) {
         if ( pks->bWinPressed ) {
           v |= 0x8800;
         }
+        kbdData.shiftLock = pks->bCapsLock;
         setKey(v, true);
         res = true;
       } 

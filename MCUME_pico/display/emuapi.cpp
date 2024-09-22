@@ -355,12 +355,12 @@ static uint16_t readAnalogJoystick(void) {
     uint16_t joysval = 0;
     nespad_read();
 
-    if ((nespad_state & DPAD_UP) != 0) joysval |= MASK_JOY2_UP;
-    if ((nespad_state & DPAD_DOWN) != 0) joysval |= MASK_JOY2_DOWN;
-    if ((nespad_state & DPAD_RIGHT) != 0) joysval |= MASK_JOY2_LEFT;
-    if ((nespad_state & DPAD_LEFT) != 0) joysval |= MASK_JOY2_RIGHT;
+    if ((nespad_state & DPAD_UP) != 0) joysval |= MASK_JOY1_UP;
+    if ((nespad_state & DPAD_DOWN) != 0) joysval |= MASK_JOY1_DOWN;
+    if ((nespad_state & DPAD_RIGHT) != 0) joysval |= MASK_JOY1_RIGHT;
+    if ((nespad_state & DPAD_LEFT) != 0) joysval |= MASK_JOY1_LEFT;
 
-    if ((nespad_state & DPAD_A) != 0) joysval |= MASK_JOY2_BTN;
+    if ((nespad_state & DPAD_A) != 0) joysval |= MASK_JOY1_BTN;
 
     if (((nespad_state & DPAD_SELECT) != 0) && ((nespad_state & DPAD_UP) != 0)) joysval |= MASK_KEY_USER1;
     if (((nespad_state & DPAD_SELECT) != 0) && ((nespad_state & DPAD_DOWN) != 0)) joysval |= MASK_KEY_USER2;
@@ -719,10 +719,9 @@ int emu_ReadKeys(void) {
 }
 
 unsigned short emu_DebounceLocalKeys(void) {
-    uint16_t bCurState = emu_ReadKeys();
+    uint16_t bCurState = (uint16_t)emu_ReadKeys() | readAnalogJoystick();
     uint16_t bClick = bCurState & ~bLastState;
     bLastState = bCurState;
-
     return (bClick);
 }
 
