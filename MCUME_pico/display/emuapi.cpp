@@ -807,10 +807,10 @@ kbd_state_t* get_kbd_state(void) {
 }
 
 #define CHAR_CODE_BS    8
-#define CHAR_CODE_UP    145
 #define CHAR_CODE_TAB   '\t'
 #define CHAR_CODE_ESC   0x1B
 
+#define CHAR_CODE_UP    145
 #define CHAR_CODE_DOWN  17
 #define CHAR_CODE_RIGHT 29
 #define CHAR_CODE_LEFT  157
