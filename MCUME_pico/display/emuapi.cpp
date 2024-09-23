@@ -798,21 +798,6 @@ static const char scan_code_2_cp866_rACL[] = {
 extern "C" uint8_t get_leds_stat();
 extern "C" volatile uint32_t ps2scancode;
 
-typedef struct kbd_state {
-    bool bWinPressed; // left Win
-    bool bCtrlPressed;
-    bool bAltPressed;
-    bool bDelPressed;
-    bool bLeftShift;
-    bool bRightShift;
-    bool bRus;
-    bool bCapsLock;
-    bool bTabPressed;
-    bool bPlusPressed;
-    bool bMinusPressed;
-    uint32_t input;
-} kbd_state_t;
-
 static kbd_state_t ks = {
     0
 };

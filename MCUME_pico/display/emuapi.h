@@ -83,6 +83,25 @@ extern void emu_FileTempInit(void);
 extern void emu_FileTempRead(int addr, unsigned char * val, int n); 
 extern void emu_FileTempWrite(int addr, unsigned char val); 
 extern void emu_printh(int val);
+
+
+typedef struct kbd_state {
+    bool bWinPressed; // left Win
+    bool bCtrlPressed;
+    bool bAltPressed;
+    bool bDelPressed;
+    bool bLeftShift;
+    bool bRightShift;
+    bool bRus;
+    bool bCapsLock;
+    bool bTabPressed;
+    bool bPlusPressed;
+    bool bMinusPressed;
+    unsigned int input;
+} kbd_state_t;
+
+extern kbd_state_t* get_kbd_state(void);
+
 #ifdef __cplusplus
 }
 #endif

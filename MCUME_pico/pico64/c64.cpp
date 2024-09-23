@@ -206,9 +206,15 @@ uint8_t cia1PORTA(void) {
       }
     }
   }
-  char tmp[64];
-  snprintf(tmp, 64, "A: v: %xh kv: %xh k: %xh keys: %xh", v, kbdData.kv, kbdData.k, keys);
-  emu_drawText(0, 0, tmp, 60, 0, 0);
+  /*
+  if (v != 0xFF) {
+    char tmp[20];
+    memset(tmp, 32, 19); tmp[19] = 0;
+    emu_drawText(0, 8, tmp, 60, 0, 0);
+    snprintf(tmp, 20, "A: %xh", v);
+    emu_drawText(0, 8, tmp, 60, 0, 0);
+  }
+  */
   return v;
 }
 
@@ -255,10 +261,6 @@ uint8_t cia1PORTB(void) {
       }
     }
   }
-  char tmp[64];
-  snprintf(tmp, 64, "B: v: %xh kv: %xh k: %xh keys: %xh", v, kbdData.kv, kbdData.k, keys);
-  emu_drawText(0, 1, tmp, 50, 0, 0);
-  return v;
   return v;
 }
 
@@ -343,24 +345,6 @@ void emu_DrawVsync(void)
 static const char * digits = "0123456789ABCDEF";
 static char buf[5] = {0,0,0,0,0};
 #endif
-
-// TODO: header
-typedef struct kbd_state {
-    bool bWinPressed; // left Win
-    bool bCtrlPressed;
-    bool bAltPressed;
-    bool bDelPressed;
-    bool bLeftShift;
-    bool bRightShift;
-    bool bRus;
-    bool bCapsLock;
-    bool bTabPressed;
-    bool bPlusPressed;
-    bool bMinusPressed;
-    uint32_t input;
-} kbd_state_t;
-
-kbd_state_t* get_kbd_state(void);
 
 void c64_Input(int bClick) {
 #ifdef DEBUG
