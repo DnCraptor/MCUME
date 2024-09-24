@@ -806,15 +806,17 @@ kbd_state_t* get_kbd_state(void) {
     return &ks;
 }
 
-#define CHAR_CODE_BS    8
+#define CHAR_CODE_DEL   0x7F
 #define CHAR_CODE_TAB   '\t'
 #define CHAR_CODE_ESC   0x1B
 
+#define CHAR_CODE_HOME  1
+#define CHAR_CODE_BS    8
 #define CHAR_CODE_UP    145
 #define CHAR_CODE_DOWN  17
 #define CHAR_CODE_RIGHT 29
 #define CHAR_CODE_LEFT  157
-#define CHAR_CODE_ENTER 0x0D //'\n'
+#define CHAR_CODE_ENTER 0x0D //'\n' -> \r
 #define CHAR_CODE_F1 0x85
 #define CHAR_CODE_F2 0x86
 #define CHAR_CODE_F3 0x87
@@ -862,6 +864,10 @@ int emu_ReadI2CKeyboard(void) {
         ks.input = 0;
         return CHAR_CODE_ENTER;
     }
+    if (ps2scancode == 0xE047 || ps2scancode == 0x47 && !(get_leds_stat() & PS2_LED_NUM_LOCK)) {
+        ks.input = 0;
+        return CHAR_CODE_HOME;
+    }
     if (ps2scancode >= 0x3B && ps2scancode <= 0x42) { // F1..F8
         ks.input = 0;
         return ps2scancode - 0x3B + CHAR_CODE_F1;
@@ -888,7 +894,7 @@ int emu_ReadI2CKeyboard(void) {
             break;
         case 0x53:
             ks.bDelPressed = true;
-            break;
+            return CHAR_CODE_DEL;
         case 0xD3:
             ks.bDelPressed = false;
             break;

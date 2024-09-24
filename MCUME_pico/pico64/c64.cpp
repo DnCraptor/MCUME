@@ -55,8 +55,8 @@ static void oneRasterLine(void) {
 }
 
 const uint32_t ascii2scan[] = {
-      //0 1 2 3 4 5 6 7 8    9 A B C D E F
-/*0*/   0,0,0,0,0,0,0,0,0x2A,0,0,0,0,0x28,0,0, // return
+      //0    1 2 3 4 5 6 7 8    9 A B C    D E F
+/*0*/   0,0x4A,0,0,0,0,0,0,0x2A,0,0,0,0,0x28,0,0, // return
      //     17:down                                                     29:right
 /*1*/   0x00,0x51,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4f,0x00,0x00,
      //sp  !       "     #     $      %      &      '     (        )   *    +    ,    -    .    / 
