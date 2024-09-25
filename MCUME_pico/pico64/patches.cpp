@@ -33,6 +33,7 @@
 
 */
 
+#include <stdint.h>
 #include "patches.h"
 #include "emuapi.h"
 #include "platform_config.h"

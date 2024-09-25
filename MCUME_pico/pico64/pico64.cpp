@@ -32,6 +32,8 @@ static int skip=0;
 #include "hardware/clocks.h"
 #include "hardware/vreg.h"
 
+bool loadPrg(void);
+
 int main(void) {
 //    vreg_set_voltage(VREG_VOLTAGE_1_05);
 //    set_sys_clock_khz(125000, true);    
@@ -66,11 +68,15 @@ int main(void) {
     emu_Init(filename);
     tft.startRefresh();
     struct repeating_timer timer;
-    add_repeating_timer_ms(25, repeating_timer_callback, NULL, &timer);    
+    add_repeating_timer_ms(25, repeating_timer_callback, NULL, &timer);
+    if (filename) {
+        while (true) {
+            emu_Step();
+            if (loadPrg()) break;
+        }
+    }
     while (true) {
-        uint16_t bClick = emu_DebounceLocalKeys();
-        emu_Input(bClick);  
-        emu_Step();        
+        emu_Step();
     }
 }
 

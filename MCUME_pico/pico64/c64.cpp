@@ -59,7 +59,7 @@ const uint32_t ascii2scan[] = {
 /*0*/   0,0x4A,0,0,0,0,0,0,0x2A,0,0,0,0,0x28,0,0, // return
      //     17:down                                                     29:right
 /*1*/   0x00,0x51,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4f,0x00,0x00,
-     //sp  !       "     #     $      %      &      '     (        )   *    +    ,    -    .    / 
+      // sp  !       "     #      $      %      &      '      (        )    *    +    ,    -    .    / 
 /*2*/   0x2c,0x201e,0x201f,0x2020,0x2021,0x2022,0x2023,0x2024,0x2025,0x2026,0x55,0x57,0x36,0x56,0x37,0x54,
        //0  1    2    3    4    5    6    7    8    9     :    ;    <      =    >      ?
 /*3*/   0x27,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x33,0x34,0x2036,0x32,0x2037,0x2054,
@@ -68,7 +68,7 @@ const uint32_t ascii2scan[] = {
         //P  Q    R    S    T    U    V    W    X    Y    Z    [      \     ]     ^    _  
 /*5*/   0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x2026,0x31,0x2027,0x00,0x00,
 /*6*/   0x2024,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12, // ' a b c d e f g h i j k l m n o
-/*7*/   0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d, 0,0,0,0x204B,0x52, // p q r s t u v w x y z { | } ~ DEL
+/*7*/   0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d, 0,0,0,0x204B,0x2029, // p q r s t u v w x y z { | } ~ DEL
        //? ?                  133:f1   f2   f3   f4   f5   f6   f7   f8 
 /*8*/   75,78,0x00,0x00,0x00,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,0x40,0x41,0x00,0x00,0x00,  // 128-143
      //     145:up                                                      157:left
@@ -264,6 +264,7 @@ uint8_t cia1PORTB(void) {
   return v;
 }
 
+static uint16_t PC_startup = 0;
 
 void c64_Init(void)
 {
@@ -274,7 +275,7 @@ void c64_Init(void)
   resetVic();
   cpu_reset();
 #ifdef HAS_SND  
-  playSID.begin();  
+  playSID.begin();
   emu_sndInit();
 #endif  
 }
@@ -285,147 +286,103 @@ void c64_Step(void)
 	oneRasterLine();
 }
 
-void c64_Start(char * filename)
-{
+#include "ff.h"
+
+inline static size_t fread(void* b, size_t sz1, size_t sz2, FIL* f) {
+    size_t res = 0;
+    f_read(f, b, sz1 * sz2, &res);
+    return res;
 }
 
+static volatile bool autoload1 = false;
+static volatile bool autoload2 = false;
+static char autoloadFilename[FF_MAX_LFN] = { 0 };
 
+void c64_Start(char* filename)
+{
+  if (filename) {
+    strncpy(autoloadFilename, filename, FF_MAX_LFN);
+    autoload1 = true;
+  } else {
+    autoloadFilename[0];
+  }
+}
+
+static char textload[] = "LOAD\"\"\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tRUN\r";
 static uint8_t nbkeys = 0;
 static uint8_t kcnt = 0;
 static bool toggle = true;
 
 static char * textseq;
-static char textload[] = "LOAD\"\"\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tRUN\r";
-static char textkey[1];
 
-static bool res=false;
-static bool firsttime=true;
-static int  loadtimeout=100; //100*20ms;
+static bool res = false;
+static volatile bool firsttime = true;
+static volatile int loadtimeout = 150; //*25ms;
 
-#ifndef PICOMPUTER
-/*
-#define OSKB_YPOS (240-16)
+bool loadPrg(void) {
+  if (!autoload1) return false;
+  autoload1 = false;
+  uint16_t start_address;
+	uint16_t end_address;
+	UINT reading_bytes;
+  uint8_t temp[2];
+///	char signature[32];
+//	uint16_t T64Entries;
+///	int FileStartOffset;
+  FIL f;
+  FIL* file = &f;
+  FRESULT res = f_open(file, autoloadFilename, FA_READ);
+  if (res != FR_OK) {
+    char tmp[40];
+    snprintf(tmp, 40, "fopen(): %d", res);
+    emu_drawText(0,0,tmp,60,0,false);
+    return true;
+  }
+  res = f_read(file, temp, 2, &reading_bytes);
+  if (res != FR_OK) {
+    char tmp[40];
+    snprintf(tmp, 40, "f_read(): %d (%d bytes)", res, reading_bytes);
+    emu_drawText(0,0,tmp,60,0,false);
+  	f_close(file);
+    return true;
+  }
+  if (reading_bytes == 2) {
+    autoload2 = true;
+    start_address = static_cast<uint16_t>(temp[0] | (temp[1] << 8));
+    if (start_address <= 0x0801) sprintf(textload, "RUN%c", 13);
+    else sprintf(textload, "SYS %d%c", start_address, 13);
+    f_read(file, cpu.RAM + start_address, static_cast<UINT>(f_size(file)) - 2, &reading_bytes);
 
-static char * oskbtext1 = "FFFFFFFF  RD\"$ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-static char * oskbtext2 = "12345678  TL  ,.*     0123456789        ";
-static int oskbXPos = 10;
-static int oskbYPos = 0;
+    sprintf(autoloadFilename, "SA: %04Xh L: %d", start_address, reading_bytes);
 
-#define OSKB_TEXT RGBVAL16(0, 0, 170)
-#define OSKB_BG   RGBVAL16(255, 255, 255)
-#define OSKB_HL   RGBVAL16(255, 255, 0)
-
-int emu_oskbActive(void) {
-  return (oskbActive?1:0);
+		cpu.RAM[0x2B] = 0x01;
+		cpu.RAM[0x2C] = 0x08;
+		start_address += static_cast<uint16_t>(reading_bytes);
+		cpu.RAM[0x2D] = static_cast<uint8_t>(start_address);
+		cpu.RAM[0x2E] = static_cast<uint8_t>(start_address>>8);
+		cpu.RAM[0xAE] = static_cast<uint8_t>(start_address);
+		cpu.RAM[0xAF] = static_cast<uint8_t>(start_address>>8);
+  }
+	f_close(file);
+  return true;
 }
-
-void emu_DrawVsync(void)
-{
-    char sel[2]={0,0};
-    if (oskbActive) {
-      int fbwidth;
-      tft.get_frame_buffer_size(&fbwidth,NULL);       
-      tft.drawText((fbwidth-320)/2,OSKB_YPOS,oskbtext1,OSKB_TEXT,OSKB_BG,false);
-      tft.drawText((fbwidth-320)/2,OSKB_YPOS+8,oskbtext2,OSKB_TEXT,OSKB_BG,false);
-      sel[0]=(oskbYPos==0)?oskbtext1[oskbXPos]:oskbtext2[oskbXPos];
-      tft.drawText((fbwidth-320)/2+oskbXPos*8,OSKB_YPOS+8*oskbYPos,sel,OSKB_TEXT,OSKB_HL,false);
-    }
-    //skip += 1;
-    //skip &= VID_FRAME_SKIP;
-#ifdef USE_VGA
-    tft.waitSync(); 
-#endif    
-}
-*/
-#endif
-
-//#define DEBUG 1
-
-#ifdef DEBUG
-static const char * digits = "0123456789ABCDEF";
-static char buf[5] = {0,0,0,0,0};
-#endif
 
 void c64_Input(int bClick) {
-#ifdef DEBUG
-        /*
-        buf[2] = 0;
-        int key = emu_ReadI2CKeyboard2(0);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*4,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        key = emu_ReadI2CKeyboard2(1);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*5,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        key = emu_ReadI2CKeyboard2(2);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*6,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        key = emu_ReadI2CKeyboard2(3);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*7,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        key = emu_ReadI2CKeyboard2(4);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*8,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        key = emu_ReadI2CKeyboard2(5);
-        buf[0] = digits[(key>>4)&0xf];
-        buf[1] = digits[key&0xf];
-        tft.drawText(4*8,16*9,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-        */
-#endif
-
-#ifndef PICOMPUTER
-/*  
-  int fbwidth;  
-  if (oskbActive) {
-    if (bClick & MASK_JOY2_BTN) {    
-      if (oskbXPos == 10) textkey[0] = 13;
-      else if (oskbXPos == 11) textkey[0] = 157;
-      else if (oskbXPos < 8) textkey[0] = 0x85+oskbXPos;
-      else textkey[0] = (oskbYPos == 0)?oskbtext1[oskbXPos]:oskbtext2[oskbXPos];
-      textseq = textkey;
-      nbkeys = 1;   
-      kcnt = 0;
-      oskbActive = false;
-      tft.get_frame_buffer_size(&fbwidth,NULL);       
-      tft.drawRect(0,OSKB_YPOS,fbwidth,16,RGBVAL16(0, 0, 0));
-    }
-    if (bClick & MASK_JOY2_RIGHT) if (oskbXPos != 0) oskbXPos--;
-    if (bClick & MASK_JOY2_LEFT) if (oskbXPos != 39)  oskbXPos++;
-    if (bClick & MASK_JOY2_UP) oskbYPos = 0;
-    if (bClick & MASK_JOY2_DOWN) oskbYPos = 1;
-  }
-*/  
-#endif
   if (nbkeys == 0) {
-#ifndef PICOMPUTER
-/*    
-    if (bClick & MASK_KEY_USER2) {
-      if (!oskbActive) {
-        oskbActive = true;
-      }
-      else {
-        oskbActive = false;
-        tft.get_frame_buffer_size(&fbwidth,NULL);       
-        tft.drawRect(0,OSKB_YPOS,fbwidth,16,RGBVAL16(0, 0, 0));
-      }       
-    } 
-    else
-*/    
-#endif
     if (loadtimeout > 0) {
       loadtimeout--; 
     }
-    if ( (bClick & MASK_KEY_USER1) && !(emu_GetPad() & MASK_OSKB) ) {
+    if ( (bClick & MASK_KEY_USER1) && !(emu_GetPad() & MASK_OSKB) || autoload2 ) {
       if (loadtimeout == 0) {
         if (firsttime) {
           firsttime = false;
-          textseq = textload;
-          nbkeys = strlen(textseq);   
-          kcnt=0;
+          loadPrg();
+    emu_drawText(0,0,autoloadFilename,255,0,false);
+          if (autoload2) {
+            textseq = textload;
+            nbkeys = strlen(textseq);   
+            kcnt = 0;
+          }
         }
         else {
           cpu.swapJoysticks = !cpu.swapJoysticks;
@@ -437,13 +394,6 @@ void c64_Input(int bClick) {
       kbd_state_t* pks = get_kbd_state();
       int hk = emu_ReadI2CKeyboard();
       if ( (hk != 0) && (res == false) ) {
-#ifdef DEBUG        
-        buf[3] = 0;
-        buf[0] = digits[(hk>>8)&0xf];
-        buf[1] = digits[(hk>>4)&0xf];
-        buf[2] = digits[hk&0xf];        
-        tft.drawText(0,0,buf,RGBVAL16(0x00,0x00,0x00),RGBVAL16(0xFF,0xFF,0xFF),true);
-#endif
         uint32_t v = ascii2scan[hk];
         if ( pks->bLeftShift ) {
           v |= 0x0200;

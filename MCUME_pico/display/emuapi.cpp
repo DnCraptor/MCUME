@@ -31,7 +31,7 @@ static bool emu_eraseGfxConfig(void);
 
 extern PICO_DSP tft;
 
-#define MAX_FILENAME_PATH   64
+#define MAX_FILENAME_PATH   128
 #define NB_FILE_HANDLER     4
 #define AUTORUN_FILENAME    "autorun.txt"
 #define GFX_CFG_FILENAME    "gfxmode.txt"
@@ -1281,7 +1281,7 @@ int handleMenu(uint16_t bClick) {
         return (ACTION_RUN);
     }
 
-    if ((bClick & MASK_JOY2_BTN) || (bClick & MASK_KEY_USER1) || (bClick & MASK_KEY_USER4)) {
+    if ((bClick & MASK_JOY1_BTN) || (bClick & MASK_JOY2_BTN) || (bClick & MASK_KEY_USER1) || (bClick & MASK_KEY_USER4)) {
         char newpath[MAX_FILENAME_PATH];
         strcpy(newpath, selection);
         strcat(newpath, "/");

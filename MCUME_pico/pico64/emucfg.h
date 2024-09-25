@@ -8,11 +8,11 @@
 #define CUSTOM_SND           1
 //#define TIMER_REND           1
 #define EXTRA_HEAP           0x10
-///#define FILEBROWSER
+#define FILEBROWSER
 
 // Title:     <                        >
 #define TITLE "    C64 Emulator "
-#define ROMSDIR "c64"
+#define ROMSDIR "/c64"
 
 #define emu_Init(ROM) {c64_Start(ROM); c64_Init(); }
 #define emu_Step(x) { c64_Step(); }
